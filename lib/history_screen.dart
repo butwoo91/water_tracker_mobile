@@ -50,7 +50,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         Expanded(
           child: TextButton(
             onPressed: () => setState(() => _selectedDays = 7),
-            style: TextButton.stylefrom(
+            style: TextButton.styleFrom(
               backgroundColor: _selectedDays == 7 ? AppTheme.primaryColor : AppTheme.secondaryColor,
               foregroundColor: _selectedDays == 7 ? Colors.white : AppTheme.primaryColor,
             ),
@@ -60,7 +60,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         Expanded(
           child: TextButton(
             onPressed: () => setState(() => _selectedDays = 30),
-            style: TextButton.stylefrom(
+            style: TextButton.styleFrom(
               backgroundColor: _selectedDays == 30 ? AppTheme.primaryColor : AppTheme.secondaryColor,
               foregroundColor: _selectedDays == 30 ? Colors.white : AppTheme.primaryColor,
             ),
