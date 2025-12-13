@@ -5,8 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:myapp/theme.dart';
 import 'package:myapp/water_provider.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  int _selectedDays = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +31,13 @@ class HistoryScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        'Review your water intake over the last week.',
+                        'Review your water intake over the last week or month.',
                         style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: 24),
+                    _buildDateRangeToggle(),
+                    const SizedBox(height: 32),
                     Expanded(
-                      child: _buildChart(waterProvider, constraints),
+                      child: _buildChart(context, waterProvider, constraints),
                     ),
                   ],
                 ),
@@ -40,14 +49,47 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChart(WaterProvider waterProvider, BoxConstraints constraints) {
+  Widget _buildDateRangeToggle() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: () => setState(() => _selectedDays = 7),
+            style: TextButton.styleFrom(
+              backgroundColor: _selectedDays == 7
+                  ? AppTheme.primaryColor
+                  : AppTheme.secondaryColor,
+              foregroundColor:
+                  _selectedDays == 7 ? Colors.white : AppTheme.primaryColor,
+            ),
+            child: const Text('Last 7 Days'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: TextButton(
+            onPressed: () => setState(() => _selectedDays = 30),
+            style: TextButton.styleFrom(
+              backgroundColor: _selectedDays == 30
+                  ? AppTheme.primaryColor
+                  : AppTheme.secondaryColor,
+              foregroundColor:
+                  _selectedDays == 30 ? Colors.white : AppTheme.primaryColor,
+            ),
+            child: const Text('Last 30 Days'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChart(BuildContext context, WaterProvider waterProvider, BoxConstraints constraints) {
     final isSmallScreen = constraints.maxWidth < 600;
     final now = DateTime.now();
     final intakesByDay = <DateTime, int>{};
-    const selectedDays = 7;
 
     final today = DateTime(now.year, now.month, now.day);
-    for (int i = 0; i < selectedDays; i++) {
+    for (int i = 0; i < _selectedDays; i++) {
       final day = today.subtract(Duration(days: i));
       intakesByDay[day] = 0;
     }
@@ -70,7 +112,7 @@ class HistoryScreen extends StatelessWidget {
           BarChartRodData(
             toY: (entry.value.toDouble() / 1000).clamp(0, 3), // Convert to Liters and clamp to 3L
             color: AppTheme.primaryColor,
-            width: isSmallScreen ? 12 : 22,
+            width: _selectedDays == 7 ? (isSmallScreen ? 12 : 22) : (isSmallScreen ? 4 : 8),
             borderRadius: const BorderRadius.all(Radius.circular(6)),
           ),
         ],
@@ -88,7 +130,7 @@ class HistoryScreen extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 30,
-              interval: 1, // Show labels at 0, 1, 2, 3
+              interval: 1,
               getTitlesWidget: (value, meta) {
                 if (value == 0 || value > 3) return Container();
                 return Text('${value.toInt()}L',
@@ -99,13 +141,34 @@ class HistoryScreen extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: 1000 * 60 * 60 * 24, // Check every day
               getTitlesWidget: (value, meta) {
                 final day = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  child: Text(DateFormat.E().format(day), // Show day of the week
-                      style: Theme.of(context).textTheme.bodySmall),
-                );
+
+                if (_selectedDays == 7) {
+                  final text = DateFormat.E().format(day);
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 8.0,
+                    child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+                  );
+                }
+
+                if (_selectedDays == 30) {
+                  final index = sortedEntries.indexWhere((entry) => entry.key.millisecondsSinceEpoch == value.toInt());
+                  // Show a label every 8 days to get 4 labels in the 30-day view
+                  if (index != -1 && index % 8 == 0) {
+                     final text = DateFormat.d().format(day);
+                     return SideTitleWidget(
+                       axisSide: meta.axisSide,
+                       space: 8.0,
+                       child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+                     );
+                  }
+                  return const SizedBox.shrink();
+                }
+
+                return const SizedBox.shrink();
               },
             ),
           ),

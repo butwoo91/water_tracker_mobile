@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/history_screen.dart';
 import 'package:myapp/home_screen.dart';
+import 'package:myapp/notification_service.dart';
 import 'package:myapp/settings_screen.dart';
 import 'package:myapp/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/water_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
   runApp(const MyApp());
 }
 
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => WaterProvider(),
       child: MaterialApp(
-        title: 'Hydration Tracker',
+        title: 'Me Before Water',
         theme: AppTheme.lightTheme,
         home: const MainScreen(),
         routes: {

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myapp/notification_service.dart';
 
 class WaterIntake {
   final DateTime date;
@@ -24,10 +24,13 @@ class WaterIntake {
 class WaterProvider with ChangeNotifier {
   int _goal = 2500;
   List<WaterIntake> _intakes = [];
-  Timer? _reminderTimer;
+  bool _remindersEnabled = false;
+  TimeOfDay? _reminderTime;
 
   int get goal => _goal;
   List<WaterIntake> get intakes => _intakes;
+  bool get remindersEnabled => _remindersEnabled;
+  TimeOfDay? get reminderTime => _reminderTime;
 
   int get todayIntake {
     final now = DateTime.now();
@@ -57,6 +60,26 @@ class WaterProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setRemindersEnabled(bool enabled) {
+    _remindersEnabled = enabled;
+    if (enabled && _reminderTime != null) {
+      NotificationService().scheduleNotification(_reminderTime!.hour, _reminderTime!.minute);
+    } else {
+      NotificationService().cancelAllNotifications();
+    }
+    _saveData();
+    notifyListeners();
+  }
+
+  void setReminderTime(TimeOfDay time) {
+    _reminderTime = time;
+    if (_remindersEnabled) {
+      NotificationService().scheduleNotification(time.hour, time.minute);
+    }
+    _saveData();
+    notifyListeners();
+  }
+
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     _goal = prefs.getInt('goal') ?? 2500;
@@ -64,6 +87,12 @@ class WaterProvider with ChangeNotifier {
     _intakes = intakesJson
         .map((json) => WaterIntake.fromJson(jsonDecode(json)))
         .toList();
+    _remindersEnabled = prefs.getBool('remindersEnabled') ?? false;
+    final reminderHour = prefs.getInt('reminderHour');
+    final reminderMinute = prefs.getInt('reminderMinute');
+    if (reminderHour != null && reminderMinute != null) {
+      _reminderTime = TimeOfDay(hour: reminderHour, minute: reminderMinute);
+    }
     notifyListeners();
   }
 
@@ -73,16 +102,10 @@ class WaterProvider with ChangeNotifier {
     final intakesJson =
         _intakes.map((intake) => jsonEncode(intake.toJson())).toList();
     await prefs.setStringList('intakes', intakesJson);
-  }
-
-  void setReminder(bool enabled, Duration interval) {
-    if (enabled) {
-      _reminderTimer = Timer.periodic(interval, (timer) {
-        // In a real app, this would show a notification.
-        developer.log("Time to drink water!", name: 'myapp.water_provider');
-      });
-    } else {
-      _reminderTimer?.cancel();
+    await prefs.setBool('remindersEnabled', _remindersEnabled);
+    if (_reminderTime != null) {
+      await prefs.setInt('reminderHour', _reminderTime!.hour);
+      await prefs.setInt('reminderMinute', _reminderTime!.minute);
     }
   }
 }

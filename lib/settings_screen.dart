@@ -12,15 +12,24 @@ class SettingsScreen extends StatefulWidget {
 
 class SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _goalController;
-  bool _remindersEnabled = false;
-  String _reminderInterval = 'Every 1 hour';
 
   @override
   void initState() {
     super.initState();
     final waterProvider = Provider.of<WaterProvider>(context, listen: false);
-    _goalController =
-        TextEditingController(text: waterProvider.goal.toString());
+    _goalController = TextEditingController(text: waterProvider.goal.toString());
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final waterProvider = Provider.of<WaterProvider>(context, listen: false);
+    final initialTime = waterProvider.reminderTime ?? TimeOfDay.now();
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+    if (picked != null && picked != waterProvider.reminderTime) {
+      waterProvider.setReminderTime(picked);
+    }
   }
 
   @override
@@ -40,8 +49,9 @@ class SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        'Adjust your daily hydration goals and reminder preferences.',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                      'Adjust your daily hydration goals and reminder preferences.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: 32),
                     TextField(
                       controller: _goalController,
@@ -62,13 +72,9 @@ class SettingsScreenState extends State<SettingsScreen> {
                     SwitchListTile(
                       title: Text('Reminders',
                           style: Theme.of(context).textTheme.titleMedium),
-                      value: _remindersEnabled,
+                      value: waterProvider.remindersEnabled,
                       onChanged: (bool value) {
-                        setState(() {
-                          _remindersEnabled = value;
-                          waterProvider.setReminder(
-                              value, _getIntervalDuration());
-                        });
+                        waterProvider.setRemindersEnabled(value);
                       },
                       activeThumbColor: AppTheme.primaryColor,
                       contentPadding: EdgeInsets.symmetric(
@@ -76,32 +82,14 @@ class SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (_remindersEnabled)
-                      DropdownButtonFormField<String>(
-                        initialValue: _reminderInterval,
-                        decoration: InputDecoration(
-                          labelText: 'Interval',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        items: <String>[
-                          'Every 30 minutes',
-                          'Every 1 hour',
-                          'Every 1.5 hours',
-                          'Every 2 hours'
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _reminderInterval = newValue!;
-                            waterProvider.setReminder(
-                                _remindersEnabled, _getIntervalDuration());
-                          });
-                        },
+                    if (waterProvider.remindersEnabled)
+                      ListTile(
+                        title: Text('Reminder Time',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        subtitle: Text(waterProvider.reminderTime?.format(context) ??
+                            'Not set'),
+                        trailing: const Icon(Icons.arrow_forward_ios),
+                        onTap: () => _selectTime(context),
                       ),
                   ],
                 );
@@ -111,20 +99,5 @@ class SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     );
-  }
-
-  Duration _getIntervalDuration() {
-    switch (_reminderInterval) {
-      case 'Every 30 minutes':
-        return const Duration(minutes: 30);
-      case 'Every 1 hour':
-        return const Duration(hours: 1);
-      case 'Every 1.5 hours':
-        return const Duration(minutes: 90);
-      case 'Every 2 hours':
-        return const Duration(hours: 2);
-      default:
-        return const Duration(hours: 1);
-    }
   }
 }
