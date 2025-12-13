@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,7 +70,8 @@ class WaterProvider with ChangeNotifier {
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('goal', _goal);
-    final intakesJson = _intakes.map((intake) => jsonEncode(intake.toJson())).toList();
+    final intakesJson =
+        _intakes.map((intake) => jsonEncode(intake.toJson())).toList();
     await prefs.setStringList('intakes', intakesJson);
   }
 
@@ -77,7 +79,7 @@ class WaterProvider with ChangeNotifier {
     if (enabled) {
       _reminderTimer = Timer.periodic(interval, (timer) {
         // In a real app, this would show a notification.
-        print("Time to drink water!");
+        developer.log("Time to drink water!", name: 'myapp.water_provider');
       });
     } else {
       _reminderTimer?.cancel();

@@ -7,10 +7,10 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  SettingsScreenState createState() => SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _goalController;
   bool _remindersEnabled = false;
   String _reminderInterval = 'Every 1 hour';
@@ -19,7 +19,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final waterProvider = Provider.of<WaterProvider>(context, listen: false);
-    _goalController = TextEditingController(text: waterProvider.goal.toString());
+    _goalController =
+        TextEditingController(text: waterProvider.goal.toString());
   }
 
   @override
@@ -28,71 +29,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: Consumer<WaterProvider>(
-          builder: (context, waterProvider, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Adjust your daily hydration goals and reminder preferences.', style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _goalController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Daily Goal (ml)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onChanged: (value) {
-                  final newGoal = int.tryParse(value);
-                  if (newGoal != null) {
-                    waterProvider.setGoal(newGoal);
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-              SwitchListTile(
-                title: Text('Reminders', style: Theme.of(context).textTheme.titleMedium),
-                value: _remindersEnabled,
-                onChanged: (bool value) {
-                  setState(() {
-                    _remindersEnabled = value;
-                    waterProvider.setReminder(value, _getIntervalDuration());
-                  });
-                },
-                activeColor: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 16),
-              if (_remindersEnabled)
-                DropdownButtonFormField<String>(
-                  value: _reminderInterval,
-                  decoration: InputDecoration(
-                    labelText: 'Interval',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  items: <String>[
-                    'Every 30 minutes',
-                    'Every 1 hour',
-                    'Every 1.5 hours',
-                    'Every 2 hours'
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _reminderInterval = newValue!;
-                      waterProvider.setReminder(_remindersEnabled, _getIntervalDuration());
-                    });
-                  },
-                ),
-            ],
-          ),
-        );
-      }),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Consumer<WaterProvider>(
+                  builder: (context, waterProvider, child) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        'Adjust your daily hydration goals and reminder preferences.',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _goalController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Daily Goal (ml)',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onChanged: (value) {
+                        final newGoal = int.tryParse(value);
+                        if (newGoal != null) {
+                          waterProvider.setGoal(newGoal);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    SwitchListTile(
+                      title: Text('Reminders',
+                          style: Theme.of(context).textTheme.titleMedium),
+                      value: _remindersEnabled,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _remindersEnabled = value;
+                          waterProvider.setReminder(
+                              value, _getIntervalDuration());
+                        });
+                      },
+                      activeThumbColor: AppTheme.primaryColor,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: constraints.maxWidth > 600 ? 16 : 0,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_remindersEnabled)
+                      DropdownButtonFormField<String>(
+                        initialValue: _reminderInterval,
+                        decoration: InputDecoration(
+                          labelText: 'Interval',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        items: <String>[
+                          'Every 30 minutes',
+                          'Every 1 hour',
+                          'Every 1.5 hours',
+                          'Every 2 hours'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _reminderInterval = newValue!;
+                            waterProvider.setReminder(
+                                _remindersEnabled, _getIntervalDuration());
+                          });
+                        },
+                      ),
+                  ],
+                );
+              }),
+            ),
+          );
+        },
+      ),
     );
   }
 

@@ -7,10 +7,10 @@ class WaterIntakeDialog extends StatefulWidget {
   const WaterIntakeDialog({super.key, required this.waterProvider});
 
   @override
-  _WaterIntakeDialogState createState() => _WaterIntakeDialogState();
+  WaterIntakeDialogState createState() => WaterIntakeDialogState();
 }
 
-class _WaterIntakeDialogState extends State<WaterIntakeDialog> {
+class WaterIntakeDialogState extends State<WaterIntakeDialog> {
   final _textController = TextEditingController();
 
   @override
