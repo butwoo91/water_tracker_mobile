@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/history_screen.dart';
 import 'package:myapp/home_screen.dart';
-import 'package:myapp/notification_service.dart';
 import 'package:myapp/settings_screen.dart';
 import 'package:myapp/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/water_provider.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().init();
+void main() {
   runApp(const MyApp());
 }
 
